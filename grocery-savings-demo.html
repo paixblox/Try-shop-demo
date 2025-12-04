@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Grocery Savings Demo • Healthy Buck</title>
+  <meta name="description" content="See how much you can save on organic staples across Sam's Club, Walmart, and Amazon. Updated weekly." />
+  <style>
+    :root{
+      --bg: #dff3f5;
+      --card: #ffffff;
+      --text: #0b2a2f;
+      --muted: #5d7d83;
+      --brand: #2aa6b4;
+      --accent: #7ee2b8;
+      --shadow: 0 18px 40px rgba(7, 30, 36, .12), 0 4px 10px rgba(7, 30, 36, .06);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;}
+    body{
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+      color:var(--text);
+      background: radial-gradient(circle at top left,#f4fcff 0,#dff3f5 32%,#c4e4eb 72%,#9fc7d1 100%);
+      line-height:1.6;
+      padding: 16px;
+    }
+    .page{
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .demo-banner{
+      background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+      color: #78350f;
+      text-align: center;
+    }
+    .demo-banner strong{
+      font-size: 18px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .demo-banner small{
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    .site-header{
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    h1{
+      margin: 0 0 8px;
+      font-size: 28px;
+      color: var(--text);
+    }
+    .subtitle{
+      margin: 0;
+      font-size: 15px;
+      color: var(--muted);
+    }
+    .last-updated{
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      font-style: italic;
+    }
+    .grid{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    @media (max-width: 640px){
+      .grid{
+        grid-template-columns: 1fr;
+      }
+    }
+    .card{
+      background: rgba(255,255,255,.95);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 8px 20px rgba(15,23,42,.1);
+      cursor: pointer;
+      transition: transform .1s ease, box-shadow .1s ease;
+      border: 2px solid transparent;
+    }
+    .card:hover{
+      transform: translateY(-4px);
+      box-shadow: 0 14px 30px rgba(15,23,42,.16);
+      border-color: var(--brand);
+    }
+    .card h3{
+      margin: 0 0 8px;
+      font-size: 16px;
+      line-height: 1.3;
+    }
+    .category{
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .price-chip{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #ecfdf5;
+      color: #047857;
+      font-size: 14px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+    .savings-text{
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    .quality-badge{
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4f46e5;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .modal-overlay{
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(11, 42, 47, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .modal-overlay.active{
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal{
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 24px 60px rgba(7, 30, 36, .2);
+      position: relative;
+    }
+    .modal-close{
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: #f3f4f6;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 20px;
+      cursor: pointer;
+      color: #6b7280;
+    }
+    .modal-close:hover{
+      background: #e5e7eb;
+    }
+    .modal h2{
+      margin: 0 0 8px;
+      font-size: 20px;
+    }
+    .modal-unit{
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+    table{
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    th, td{
+      padding: 10px 8px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th{
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      font-weight: 600;
+    }
+    tr.best{
+      background: #d1fae5;
+      font-weight: 600;
+    }
+    .note-box{
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      color: #166534;
+      margin-top: 12px;
+    }
+    .cta-section{
+      background: linear-gradient(135deg, var(--accent) 0%, var(--brand) 100%);
+      border-radius: 20px;
+      padding: 32px 24px;
+      margin: 32px 0;
+      text-align: center;
+      box-shadow: var(--shadow);
+      color: #053136;
+    }
+    .cta-section h2{
+      margin: 0 0 12px;
+      font-size: 24px;
+    }
+    .cta-section p{
+      margin: 0 0 20px;
+      font-size: 15px;
+      opacity: 0.9;
+    }
+    .cta-section ul{
+      text-align: left;
+      display: inline-block;
+      margin: 16px 0 24px;
+      padding: 0;
+      list-style: none;
+    }
+    .cta-section li{
+      padding: 6px 0;
+      font-size: 15px;
+    }
+    .cta-section li:before{
+      content: "✓ ";
+      color: #065f46;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+    .cta-button{
+      display: inline-block;
+      background: white;
+      color: var(--brand);
+      padding: 14px 32px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 16px;
+      text-decoration: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,.15);
+      transition: transform .1s ease, box-shadow .1s ease;
+    }
+    .cta-button:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,.2);
+    }
+    .stats{
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin: 24px 0;
+      flex-wrap: wrap;
+    }
+    .stat{
+      text-align: center;
+    }
+    .stat-value{
+      font-size: 32px;
+      font-weight: 800;
+      color: #053136;
+      display: block;
+    }
+    .stat-label{
+      font-size: 13px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="demo-banner">
+      <strong>🎯 DEMO MODE</strong>
+      <small>Showing 3 of 10 weekly tracked items • Members get full access to all stores & custom tracking</small>
+    </div>
+
+    <header class="site-header">
+      <h1>Weekly Grocery Savings</h1>
+      <p class="subtitle">
+        Compare organic & non-GMO staples across Sam's Club, Walmart, and Amazon
+      </p>
+      <div class="last-updated">
+        Last updated: November 12, 2025
+      </div>
+    </header>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value">$4.80</span>
+        <span class="stat-label">Potential savings shown</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">3</span>
+        <span class="stat-label">Items tracked (demo)</span>
+      </div>
+    </div>
+
+    <main>
+      <div id="product-grid" class="grid"></div>
+    </main>
+
+    <section class="cta-section">
+      <h2>💰 You Just Saved $4.80 in 30 Seconds</h2>
+      <p>Imagine doing this <strong>every week</strong> across all your groceries.</p>
+      
+      <div class="stats" style="margin: 20px 0;">
+        <div class="stat">
+          <span class="stat-value" style="color:#053136;">10</span>
+          <span class="stat-label">Organic staples tracked weekly</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" style="color:#053136;">7</span>
+          <span class="stat-label">Major stores compared</span>
+        </div>
+      </div>
+
+      <ul>
+        <li>Updated every Monday with fresh prices</li>
+        <li>Track across Costco, Sam's, Walmart, Whole Foods, Target, Albertsons & Kroger</li>
+        <li>Add your own custom items to track</li>
+        <li>Plus 7 more wellness tools (recipes, journal, GLP-1 helpers & more)</li>
+      </ul>
+
+      <p style="font-size: 18px; font-weight: 700; margin: 20px 0 16px;">
+        $5/month • Pays for itself in week 1
+      </p>
+
+      <a href="https://healthyprivatetools.carrd.co/" class="cta-button">
+        Start 7-Day Free Trial →
+      </a>
+    </section>
+
+  </div>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">×</button>
+      <h2 id="modal-title"></h2>
+      <div id="modal-unit" class="modal-unit"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Store</th>
+            <th>Price</th>
+            <th>vs. Best</th>
+          </tr>
+        </thead>
+        <tbody id="modal-rows"></tbody>
+      </table>
+      <div class="note-box" id="modal-note"></div>
+    </div>
+  </div>
+
+  <script>
+    const PRODUCTS = [
+      {
+        id: "eggs",
+        name: "365 Organic Large Brown Eggs (12 ct)",
+        unit: "per dozen",
+        category: "Protein & Breakfast",
+        quality: "USDA Organic • Non-GMO",
+        stores: {
+          sams:    { price: 5.29 },
+          walmart: { price: 5.98 },
+          amazon:  { price: 6.49 }
+        }
+      },
+      {
+        id: "olive-oil",
+        name: "Kirkland Organic Extra Virgin Olive Oil (1 L)",
+        unit: "per liter",
+        category: "Healthy Fats & Oils",
+        quality: "USDA Organic • Non-GMO",
+        stores: {
+          sams:    { price: 12.49 },
+          walmart: { price: 13.29 },
+          amazon:  { price: 13.99 }
+        }
+      },
+      {
+        id: "greek-yogurt",
+        name: "Stonyfield Organic Plain Greek Yogurt (32 oz)",
+        unit: "per tub",
+        category: "Protein & Dairy",
+        quality: "USDA Organic • Non-GMO",
+        stores: {
+          sams:    { price: 6.19 },
+          walmart: { price: 6.79 },
+          amazon:  { price: 7.29 }
+        }
+      }
+    ];
+
+    const STORE_LABELS = {
+      sams: "Sam's Club",
+      walmart: "Walmart",
+      amazon: "Amazon"
+    };
+
+    function getBestStore(stores){
+      const entries = Object.entries(stores);
+      let best = entries[0];
+      for(const entry of entries){
+        if(entry[1].price < best[1].price) best = entry;
+      }
+      return { key: best[0], price: best[1].price };
+    }
+
+    function getSavings(stores){
+      const prices = Object.values(stores).map(s => s.price);
+      return +(Math.max(...prices) - Math.min(...prices)).toFixed(2);
+    }
+
+    function renderGrid(){
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = "";
+      
+      PRODUCTS.forEach(p => {
+        const best = getBestStore(p.stores);
+        const savings = getSavings(p.stores);
+        
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.onclick = () => showModal(p);
+        
+        card.innerHTML = `
+          <h3>${p.name}</h3>
+          <div class="category">${p.category} • ${p.unit}</div>
+          <div class="price-chip">
+            From $${best.price.toFixed(2)} at ${STORE_LABELS[best.key]}
+          </div>
+          <div class="savings-text">
+            ↓ Save up to $${savings.toFixed(2)} vs highest price
+          </div>
+          <div class="quality-badge">${p.quality}</div>
+        `;
+        
+        grid.appendChild(card);
+      });
+    }
+
+    function showModal(product){
+      const best = getBestStore(product.stores);
+      const comparison = Object.entries(product.stores)
+        .map(([key, data]) => ({
+          key,
+          price: data.price,
+          diff: +(data.price - best.price).toFixed(2)
+        }))
+        .sort((a,b) => a.price - b.price);
+
+      document.getElementById('modal-title').textContent = product.name;
+      document.getElementById('modal-unit').textContent = `${product.category} • ${product.unit}`;
+      
+      const tbody = document.getElementById('modal-rows');
+      tbody.innerHTML = "";
+      
+      comparison.forEach(item => {
+        const tr = document.createElement('tr');
+        if(item.diff === 0) tr.classList.add('best');
+        const diffText = item.diff === 0 ? "Best price" : "+$" + item.diff.toFixed(2);
+        tr.innerHTML = `
+          <td>${STORE_LABELS[item.key]}</td>
+          <td>$${item.price.toFixed(2)}</td>
+          <td>${diffText}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const maxSave = comparison[comparison.length - 1].diff;
+      document.getElementById('modal-note').textContent = 
+        `💡 Shopping at ${STORE_LABELS[best.key]} instead of the highest-priced store saves you $${maxSave.toFixed(2)} ${product.unit} on this item.`;
+
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function closeModal(){
+      document.getElementById('modal').classList.remove('active');
+    }
+
+    document.getElementById('modal').onclick = (e) => {
+      if(e.target.id === 'modal') closeModal();
+    };
+
+    renderGrid();
+  </script>
+</body>
+</html>
